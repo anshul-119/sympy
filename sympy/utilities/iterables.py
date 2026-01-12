@@ -21,7 +21,10 @@ from sympy.utilities.decorator import deprecated
 
 
 if TYPE_CHECKING:
-    from typing import Iterable, Callable, Literal, Sequence, Iterator, TypeVar
+    from typing import (
+        Any, Iterable, Callable, Literal, Sequence, Iterator, TypeVar
+        )
+    from typing_extensions import TypeIs
     T = TypeVar("T")
     T1 = TypeVar("T1")
     T2 = TypeVar("T2")
@@ -3112,7 +3115,24 @@ def iterable(i, exclude=(str, dict, NotIterable)):
     return True
 
 
-def is_sequence(i, include=None):
+@overload
+def is_sequence(
+    i: Sequence[T] | Iterable[T],
+    include: type[object] | tuple[type[object], ...] | None = None,
+) -> TypeIs[Sequence[T]]: ...
+
+
+@overload
+def is_sequence(
+    i: object,
+    include: type[object] | tuple[type[object], ...] | None = None,
+) -> TypeIs[Sequence[Any]]: ...
+
+
+def is_sequence(
+    i: object,
+    include: type[object] | tuple[type[object], ...] | None = None,
+) -> TypeIs[Sequence[Any]]:
     """
     Return a boolean indicating whether ``i`` is a sequence in the SymPy
     sense. If anything that fails the test below should be included as
@@ -3146,10 +3166,10 @@ def is_sequence(i, include=None):
     True
 
     """
-    return (hasattr(i, '__getitem__') and
-            iterable(i) or
-            bool(include) and
-            isinstance(i, include))
+    return (
+        (hasattr(i, "__getitem__") and iterable(i))
+        or (include is not None and isinstance(i, include))
+    )
 
 
 @deprecated(
